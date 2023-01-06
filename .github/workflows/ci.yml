@@ -5,11 +5,18 @@ on:
   push: 
     branches: [develop]
 jobs:
-  build:
+  test-build-deploy_stg:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Use NodeJS
+      - name: Cache node_modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}node-${{ hashFiles('**/package-lock.json') }}
+          restore-key: |
+            ${{ runner.os }}node-
+      - name: Install NodeJS
         uses: actions/setup-node@v1
         with:
           node-version: "12.x"
@@ -18,10 +25,10 @@ jobs:
       - run: npm test -- --coverage
         env:
           CI: true
-      - name:
+      - name: Build Project
         if: github.event_name == 'push'
         run: npm run build
-      - name:
+      - name: Deploy to Staging
         if: github.event_name == 'push'
         run: npx surge --project ./build --domain same-balance.surge.sh 
         env: 
